@@ -6,7 +6,11 @@ require('dotenv').config();
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var bookRouter = require('./routes/books');
+var reviewRouter = require('./routes/reviews');
+
 const { dbConnection } = require('./config/dbconfig');
+const { errorHandler } = require("./utils/ErrorHandler");
 
 var app = express();
 dbConnection();
@@ -19,5 +23,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/api', bookRouter);
+app.use('/api', reviewRouter);
+
+app.use(errorHandler);
 
 module.exports = app;
