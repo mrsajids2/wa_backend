@@ -1,19 +1,27 @@
-const Book = require('../models/Book');
-const Review = require('../models/Review');
+const Book = require("../models/Book");
+const Review = require("../models/Review");
+const response = require("../utils/responseManager");
 
 // Add a new book (Authenticated)
 exports.addBook = async (req, res) => {
   try {
     const { title, author, genre } = req.body;
+
+    // Simple validation
+    if (!title || !author || !genre) {
+      return response.badRequest(res, "Title, author, and genre are required.");
+    }
+
     const book = await Book.create({
       title,
       author,
       genre,
       createdBy: req.user._id,
     });
-    res.status(201).json(book);
+
+    return response.created(res, "Book created successfully", book);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    return response.serverError(res, "Failed to create book", err.message);
   }
 };
 
@@ -21,17 +29,22 @@ exports.addBook = async (req, res) => {
 exports.getBooks = async (req, res) => {
   try {
     const { author, genre, page = 1, limit = 10 } = req.query;
+
     const filter = {};
-    if (author) filter.author = new RegExp(author, 'i');
+    if (author) filter.author = new RegExp(author, "i");
     if (genre) filter.genre = genre;
 
     const books = await Book.find(filter)
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    res.json(books);
+    if (books.length === 0) {
+      return response.notFound(res, "No books found");
+    }
+
+    return response.success(res, "Books fetched successfully", books);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return response.serverError(res, "Failed to fetch books", err.message);
   }
 };
 
@@ -39,7 +52,7 @@ exports.getBooks = async (req, res) => {
 exports.getBookById = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
-    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (!book) return response.notFound(res, "Book not found");
 
     const reviews = await Review.find({ book: book._id });
     const avgRating =
@@ -47,17 +60,17 @@ exports.getBookById = async (req, res) => {
 
     const { page = 1, limit = 5 } = req.query;
     const paginatedReviews = await Review.find({ book: book._id })
-      .populate('user', 'username')
+      .populate("user", "username")
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    res.json({
+    return response.success(res, "Book fetched successfully", {
       book,
       averageRating: avgRating.toFixed(1),
       reviews: paginatedReviews,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return response.serverError(res, "Failed to fetch book", err.message);
   }
 };
 
@@ -67,9 +80,17 @@ exports.addReview = async (req, res) => {
     const { rating, comment } = req.body;
     const bookId = req.params.id;
 
-    // Check if user already reviewed this book
-    const existing = await Review.findOne({ book: bookId, user: req.user._id });
-    if (existing) return res.status(400).json({ error: 'Already reviewed' });
+    if (!rating) {
+      return response.badRequest(res, "Rating is required");
+    }
+
+    const alreadyReviewed = await Review.findOne({
+      book: bookId,
+      user: req.user._id,
+    });
+    if (alreadyReviewed) {
+      return response.badRequest(res, "You have already reviewed this book");
+    }
 
     const review = await Review.create({
       book: bookId,
@@ -78,9 +99,9 @@ exports.addReview = async (req, res) => {
       comment,
     });
 
-    res.status(201).json(review);
+    return response.created(res, "Review added successfully", review);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    return response.serverError(res, "Failed to add review", err.message);
   }
 };
 
@@ -88,14 +109,19 @@ exports.addReview = async (req, res) => {
 exports.searchBooks = async (req, res) => {
   try {
     const { q } = req.query;
-    const regex = new RegExp(q, 'i');
+    console.log(q);
+    
+    if (!q) {
+      return response.badRequest(res, "Search query (q) is required");
+    }
 
+    const regex = new RegExp(q, "i");
     const books = await Book.find({
       $or: [{ title: regex }, { author: regex }],
     });
 
-    res.json(books);
+    return response.success(res, "Search results", books);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return response.serverError(res, "Search failed", err.message);
   }
 };

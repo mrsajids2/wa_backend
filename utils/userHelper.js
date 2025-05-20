@@ -30,7 +30,7 @@ const generateHeaderKey = (email) => {
   try {
     // generate token
     let token = jwt.sign({ email: email }, process.env.JWTTOKEN, {
-      expiresIn: "1Hr",
+      expiresIn: "24h",
     });
     return token;
   } catch (error) {

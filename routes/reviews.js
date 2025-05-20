@@ -1,11 +1,11 @@
 // routes/reviews.js
 const express = require('express');
 const { updateReview, deleteReview } = require('../controllers/reviewController');
-const { verifytoken } = require('../utils/userHelper');
+const auth = require('../middleware/authMiddleWare');
 
 const router = express.Router();
 
-router.put('/reviews/:id', verifytoken, updateReview);
-router.delete('/reviews/:id', verifytoken, deleteReview);
+router.put('/reviews/:id', auth, updateReview);
+router.delete('/reviews/:id', auth, deleteReview);
 
 module.exports = router;
