@@ -172,7 +172,6 @@ exports.deleteBook = async (req, res) => {
     // if (book.createdBy.toString() !== req.user._id.toString()) {
     //   return response.forbidden(res, 'Not authorized to delete this book');
     // }
-
     // Delete all related reviews first
     await Review.deleteMany({ book: book._id });
 

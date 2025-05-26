@@ -8,7 +8,6 @@ const {
 } = require('../controllers/bookController');
 const router = express.Router();
 
-
 router.post('/books', auth, addBook);
 router.get('/books', getBooks);
 router.get('/books/:id', getBookById);
