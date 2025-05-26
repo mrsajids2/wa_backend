@@ -167,6 +167,7 @@ exports.deleteBook = async (req, res) => {
     if (!book) {
       return response.notFound(res, 'Book not found');
     }
+    console.log(book, req.user);
 
     if (!book.createdBy.equals(req.user._id)) {
       return response.forbidden(res, 'Not authorized to delete this book');

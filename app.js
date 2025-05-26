@@ -8,13 +8,13 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var bookRouter = require('./routes/books');
 var reviewRouter = require('./routes/reviews');
-
+var cors = require('cors');
 const { dbConnection } = require('./config/dbconfig');
 const { errorHandler } = require("./utils/ErrorHandler");
 
 var app = express();
 dbConnection();
-
+app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
