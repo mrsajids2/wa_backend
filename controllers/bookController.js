@@ -125,3 +125,60 @@ exports.searchBooks = async (req, res) => {
     return response.serverError(res, "Search failed", err.message);
   }
 };
+
+
+// update existing book (Authenticated)
+// Update a book
+exports.updateBook = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return response.notFound(res, 'Book not found');
+    }
+
+    // Check if the logged-in user is the creator
+    if (!book.createdBy.equals(req.user._id)) {
+      return response.forbidden(res, 'Not authorized to update this book');
+    }
+
+    const { title, author, genre } = req.body;
+
+    // Update fields if provided
+    if (title !== undefined) book.title = title;
+    if (author !== undefined) book.author = author;
+    if (genre !== undefined) book.genre = genre;
+
+    await book.save();
+
+    return response.success(res, 'Book updated successfully', book);
+  } catch (error) {
+    return response.serverError(res, 'Failed to update book', error.message);
+  }
+};
+
+// Delete a book (only by creator)
+exports.deleteBook = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return response.notFound(res, 'Book not found');
+    }
+
+    if (!book.createdBy.equals(req.user._id)) {
+      return response.forbidden(res, 'Not authorized to delete this book');
+    }
+
+    // Delete related reviews
+    await Review.deleteMany({ book: book._id });
+
+    await book.remove();
+
+    return response.success(res, 'Book deleted successfully');
+  } catch (error) {
+    return response.serverError(res, 'Failed to delete book', error.message);
+  }
+};
