@@ -1,0 +1,38 @@
+*********************************************************
+POST
+http://localhost:4000/users/login 
+{
+    "email": "",
+    "password": ""
+}
+{
+    "status": true,
+    "statuscode": 200,
+    "message": "Successfully Loged in.",
+    "data": {
+        "headerkey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InNkazFAZ21haWwuY29tIiwiaWF0IjoxNzQ4Mjc5MDU0LCJleHAiOjE3NDgzNjU0NTR9.bQ9av3gqzy8bvH4RLBSB5mdBewMx6JSj2N6-IzXQdoo"
+    },
+    "error": null
+}
+*********************************************************
+POST
+http://localhost:4000/users/signup
+{
+    "email":"sdk2@gmail.com",
+    "password":"12345",
+    "name":"sajeeds"
+}
+
+
+*********************************************************
+Put
+http://localhost:4000/api/books/bookid
+{
+  "title": "The Gemage walker",
+  "author": "J.K. Rowling",
+  "genre": "Fantasy"
+}
+********************************************************
+delete
+http://localhost:4000/api/books/bookid
+{}
