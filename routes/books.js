@@ -1,6 +1,6 @@
 // routes/books.js
 const express = require('express');
-const auth = require('../middleware/authMiddleWare');
+const auth = require('../middleware/authMiddleware');
 const {
   addBook, getBooks, getBookById, addReview, searchBooks,
   updateBook,

@@ -1,7 +1,7 @@
 // routes/reviews.js
 const express = require('express');
 const { updateReview, deleteReview } = require('../controllers/reviewController');
-const auth = require('../middleware/authMiddleWare');
+const auth = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
