@@ -33,7 +33,7 @@ Create a .env file in the root directory:
 
 ```bash
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/bookreview
+DB=mongodb:url
 JWT_SECRET=your_jwt_secret_key
 ```
 
