@@ -12,6 +12,7 @@ exports.signUpCompany = async (req, res, next) => {
 
   // Step 1: Request body validation
   const { companyname, contactname, email, password, mobile, pageurl, loginby, applicationname } = req.body;
+
   // console.log(Object.values(req.body));
 
   // if (!companyname || !contactname || !password || !email || !mobile || !pageurl || !loginby || !applicationname) {
@@ -19,7 +20,7 @@ exports.signUpCompany = async (req, res, next) => {
   // }
 
   try {
-    // Step 2: generate hash
+    // Step 2: Generating hash
     const hashpassword = await generateHashPassword(password);
 
     // call robohosterproc.useregistrationprocedure(1'userregistration',2'loginid',3'
@@ -27,17 +28,18 @@ exports.signUpCompany = async (req, res, next) => {
     // 9'whatsappno', 10'address',11'stateid', 12'cityid',13'pincode', 14'gstno',
     // '', '', '','','pageurl', 'callin-->Web/Mobile', 'applicationname');
 
-    // Step 2: Generating hash
+    // Step 3: Preparing procedure parameters
     const procedureParams = ['userregistration', '0', '', '0', companyname, 'username', email, mobile, mobile, 'address', '1', '2', '444444', '123456', '', '', '', '', pageurl, loginby, applicationname];
 
-    // Step 3: Executing query
+    // Step 4: Executing the procedure
     const result = await db.query(companyProcedure.registerUser, procedureParams);
 
-    // Step 4: Processing result
+    // Step 5: Processing result
     if (result?.rows.length) {
       const rawMessage = result.rows[0]?.input20 || '';
       const [statusCode, message] = rawMessage.split('#');
 
+      // Step 6: Sending response
       if (statusCode === '200') {
         return response.success(res, statusCode, message);
       } else {
