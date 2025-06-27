@@ -5,24 +5,24 @@ const sendResponse = (
   statuscode,
   status,
   message,
-  data = null,
+  entity = null,
   error = null
 ) => {
   return res.status(statuscode).json({
     status,
     statuscode,
     message,
-    data,
+    entity,
     error,
   });
 };
 
 const ResponseManager = {
-  success: (res, message = "Success", data = {}) =>
-    sendResponse(res, 200, true, message, data),
+  success: (res, statuscode = 200, message = "Success", entity = {}) =>
+    sendResponse(res, statuscode, true, message, entity),
 
-  created: (res, message = "Resource created", data = {}) =>
-    sendResponse(res, 201, true, message, data),
+  created: (res, message = "Resource created", entity = {}) =>
+    sendResponse(res, 201, true, message, entity),
 
   badRequest: (res, message = "Bad request", error = {}) =>
     sendResponse(res, 400, false, message, null, error),
@@ -39,8 +39,8 @@ const ResponseManager = {
   notFound: (res, message = "Not Date Found") =>
     sendResponse(res, 404, false, message),
 
-  serverError: (res, message = "Internal Server Error", error = {}) =>
-    sendResponse(res, 500, false, message, null, error),
+  serverError: (res, statuscode = 500, message = "Internal Server Error", error = {}) =>
+    sendResponse(res, statuscode, false, message, null, error),
 };
 
 module.exports = ResponseManager;

@@ -6,7 +6,7 @@ if(process.env.MODE==='development')
   res.status(err?.statusCode || 500).json({
     status: false,
     statuscode: err?.statusCode || 500,
-    message: err?.message || "Something went wrong",
+    message: err?.message || "Something went wrong(Global)",
     error: err,
   });
 };
