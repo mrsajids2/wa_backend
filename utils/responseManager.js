@@ -8,7 +8,7 @@ const sendResponse = (
   entity = null,
   error = null
 ) => {
-  return res.status(statuscode).json({
+  return res.status(200).json({
     status,
     statuscode,
     message,

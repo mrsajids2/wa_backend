@@ -7,11 +7,12 @@ const {
 const response = require("../utils/responseManager");
 const db = require("../config/conn");
 const companyProcedure = require("../constant/procedures/companyProcedure");
+const { sendOtp, sendMail } = require("../utils/common");
 
 exports.signUpCompany = async (req, res, next) => {
 
   // Step 1: Request body validation
-  const { companyname, contactname, email, password, mobile, pageurl, loginby, applicationname } = req.body;
+  const { companyname, contactname, email, password, mobile, pageurl, loginby, applicationname, ipaddress, browserdetails, osdetails } = req.body;
 
   // console.log(Object.values(req.body));
 
@@ -23,25 +24,65 @@ exports.signUpCompany = async (req, res, next) => {
     // Step 2: Generating hash
     const hashpassword = await generateHashPassword(password);
 
-    // call robohosterproc.useregistrationprocedure(1'userregistration',2'loginid',3'
-    // remarks', 4'userid',5'companyname',6'username', 7'emailid', 8'mobileno',
-    // 9'whatsappno', 10'address',11'stateid', 12'cityid',13'pincode', 14'gstno',
-    // '', '', '','','pageurl', 'callin-->Web/Mobile', 'applicationname');
+    // call tspproc.userregistration('userregistration', 2'userid', 3'username',
+    // 4'mobileno', 5'fileid', 6'bannerid', 7'emailid', 'remarks', 'stateid',
+    // 'cityid', '', '', 13'', '', 15'', '', '', '', 'pageurl',
+    // 'callin-->Web/Mobile', 'applicationname');
 
     // Step 3: Preparing procedure parameters
-    const procedureParams = ['userregistration', '0', '', '0', companyname, 'username', email, mobile, mobile, 'address', '1', '2', '444444', '123456', '', '', '', '', pageurl, loginby, applicationname];
+    const procedure1Params = ['userregistration', '0', companyname, mobile, '', '', email, '', '', '', '', '', '', '', '', '', '', '', pageurl, loginby, applicationname];
 
     // Step 4: Executing the procedure
-    const result = await db.query(companyProcedure.registerUser, procedureParams);
+    const result = await db.query(companyProcedure.registerComponay, procedure1Params);
 
     // Step 5: Processing result
     if (result?.rows.length) {
       const rawMessage = result.rows[0]?.input20 || '';
       const [statusCode, message] = rawMessage.split('#');
 
-      // Step 6: Sending response
+      // Step 6: Sending OTP 
       if (statusCode === '200') {
-        return response.success(res, statusCode, message);
+        // return response.success(res, statusCode, message);
+
+        // Sending email OTP
+        const otpcode = await sendOtp();
+        const respsn = await sendMail({
+          to: 'sajeedsyed009@gmail.com',
+          subject: 'Test Email',
+          text: 'Hello! This is a plain text email.',
+          html: '<h1>Hello!</h1><p>OTP:' + otpcode + '</p>',
+        });
+        if (!respsn.success) {
+          return response.serverError(res, 500, "Failed to send OTP");
+        }
+
+        //  call tspproc.userloginprocedure('insertuserloginotp', 'mobileno',
+        // 'ipaddress', 'browserdetails', 5'osdetails', 'otpcode', 'msgresponse',
+        // 'otptype', '', 10'', '', '', '', '', 15'', '', '', '', 'pageurl',
+        // 'callin-->Web/Mobile', 'applicationname');
+
+        //* otptype -> 0 - Login/1 - Forget Password/2 - Change Password/3 - Registration
+
+        // Step 7: inserting OTP into the database
+        const procedure2Params = ['insertuserloginotp', mobile, ipaddress, browserdetails, osdetails, otpcode, '', '3', '', '', '', '', '', '', '', '', '', '', pageurl, loginby, applicationname];
+
+        // const otpInsertResult = await db.query(companyProcedure.insertOtp, procedure2Params);
+        const otpInsertResult = await db.query(companyProcedure.insertOtp, procedure2Params);
+
+        // Step 8: Processing OTP insert result
+        if (otpInsertResult?.rows.length) {
+          const otpInsertMessage = otpInsertResult.rows[0]?.input20 || '';
+          const [otpStatusCode, otpMessage] = otpInsertMessage.split('#');
+
+          //   // Step 8: Sending OTP response
+          if (otpStatusCode === '200') {
+            return response.success(res, statusCode, otpMessage);
+          } else {
+            return response.serverError(res, otpStatusCode, otpMessage);
+          }
+        } else {
+          return response.serverError(res);
+        }
       } else {
         return response.serverError(res, statusCode, message);
       }
@@ -52,6 +93,49 @@ exports.signUpCompany = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.vefifySignUpOtp = async (req, res, next) => {
+  // Step 1: Request body validation
+  const { otp, companyname, contactname, email, password, mobile, pageurl, loginby, applicationname, ipaddress, browserdetails, osdetails } = req.body;
+
+  /*
+          call tspproc.userloginprocedure(1'verifyuserloginotp', 2'mobileno',
+          3'ipaddress', 4'browserdetails', 5'osdetails', 'otpcode', 'otptype', '', '',
+          10'', '', '', '', '', 15'', '', '', '', 'pageurl', 'callin-->Web/Mobile',
+          'applicationname');
+          
+          otptype -> 0 - Login/1 - Forget Password/2 - Change Password/3 - Registration
+          */
+  try {
+    // Step 2: Generating hash
+    // const hashpassword = await generateHashPassword(password);
+
+    // Step 3: Preparing procedure parameters
+    const procedure1Params = ['verifyuserloginotp', mobile, ipaddress, browserdetails, osdetails, otp, '3', '', '', '', '', '', '', '', '', '', '', '', pageurl, loginby, applicationname];
+    console.log("Procedure Params:", procedure1Params.length);
+
+
+    // Step 4: Executing the procedure
+    const result = await db.query(companyProcedure.verifyOtp, procedure1Params);
+
+    // Step 5: Processing result
+    if (result?.rows.length) {
+
+      const rawMessage = result.rows[0]?.input20 || '';
+      const [statusCode, message] = rawMessage.split('#');
+      if (statusCode === '200') {
+        return response.success(res, statusCode, message);
+      } else {
+        return response.serverError(res, statusCode, message);
+      }
+
+    } else {
+      return response.serverError(res);
+    }
+  } catch (error) {
+    next(error);
+  }
+}
 
 exports.loginCompnay = async (req, res, next) => {
   const { email, password, mobile } = req.body;
