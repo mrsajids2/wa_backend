@@ -6,7 +6,7 @@ const {
   signupSendOTP,
   sendSMSOTP,
 } = require("../utils/verification");
-const Company = require("../respository/companyDao");
+const Company = require("../respository/company.respository");
 const {
   createOtpSessionForOTP,
   checkAllRedisData,

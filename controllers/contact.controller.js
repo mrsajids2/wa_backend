@@ -1,13 +1,21 @@
+const { getAllContacts } = require("../respository/contact.repository");
 const fs = require("fs");
 const path = require("path");
-const xlsx = require("xlsx");
-const csv = require("csv-parser");
 const { insertManyContacts } = require("../respository/contact.repository");
+const { parseCSV, parseExcel } = require("../utils/common");
+const response = require("../utils/responseManager");
 
-exports.uploadContactswithExcel = async (req, res) => {
+exports.uploadContacts = async (req, res) => {
+  // Step 1: req body validation
+  const { companyid } = req.body;
+  if (!companyid) {
+    return response.forbidden(res, "Companyid is required");
+  }
+
   try {
+    // Step 2: file validation
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded." });
+      return response.badRequest(res, "No file uploaded.");
     }
 
     const filePath = req.file.path;
@@ -16,7 +24,7 @@ exports.uploadContactswithExcel = async (req, res) => {
 
     if (!allowedExt.includes(ext)) {
       fs.unlinkSync(filePath);
-      return res.status(400).json({ error: "Unsupported file type." });
+      return response.badRequest(res, "No file uploaded.");
     }
 
     let contacts = [];
@@ -28,34 +36,60 @@ exports.uploadContactswithExcel = async (req, res) => {
 
     fs.unlinkSync(filePath); // remove file after parsing
     console.log("Parsed contacts:", contacts);
-    
 
-    await insertManyContacts(contacts);
+    const { successCount, failedCount } = await insertManyContacts(
+      "company",
+      companyid,
+      contacts
+    );
 
-    return res.status(200).json({
-      message: "Contacts uploaded and saved to database.",
-      count: contacts.length,
+    return response.success(res, 200, "Contacts uploaded successfully.", {
+      message: "Contacts uploaded successfully.",
+      total: contacts.length,
+      successCount,
+      failedCount,
     });
   } catch (err) {
     console.error("Upload error:", err);
-    return res.status(500).json({ error: "Internal server error." });
+    return response.serverError(res, "Internal server error");
   }
 };
 
-function parseCSV(filePath) {
-  return new Promise((resolve, reject) => {
-    const results = [];
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on("data", (data) => results.push(data))
-      .on("end", () => resolve(results))
-      .on("error", (err) => reject(err));
-  });
-}
-
-function parseExcel(filePath) {
-  const workbook = xlsx.readFile(filePath);
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  return xlsx.utils.sheet_to_json(worksheet);
-}
+// GET /contact/details - Get contact details with search and pagination
+exports.getContactDetails = async (req, res) => {
+  const {
+    companyid,
+    mobileno,
+    search = "",
+    page = 1,
+    pageSize = 10,
+  } = req.body;
+  try {    
+    const filterConditions = {};
+    if (companyid) {
+      filterConditions.companyid = companyid;
+    }
+    if (mobileno) {
+      filterConditions.mobileno = mobileno;
+    }
+    const result = await getAllContacts("company", {
+      filterConditions,
+      search,
+      page: parseInt(page),
+      pageSize: parseInt(pageSize),
+    });
+    if (!result.contacts || result.contacts.length === 0) {
+      return response.notFound(res, 404, "No data found", {
+        contacts: [],
+        total: 0,
+        page: parseInt(page, 10),
+        pageSize: parseInt(pageSize, 10),
+        totalPages: 0,
+      });
+    }
+    return response.success(res, 200, "Success", result);
+  } catch (err) {
+    console.error("Get contact details error:", err);
+    return response.serverError(res, "Internal server error");
+  }
+};

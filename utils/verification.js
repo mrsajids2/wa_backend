@@ -94,7 +94,7 @@ exports.sendWhatsAppOTPWithTemplate = async (phoneNumber, otp) => {
       to: phoneNumber, // Use the parameter instead of hardcoded number
       type: "template",
       template: {
-        name: "otp_template",
+        name: process.env.OTP_TEMPLATE_NAME,
         language: {
           code: "en",
         },

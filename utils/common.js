@@ -1,6 +1,9 @@
 const { default: axios } = require("axios");
 const nodemailer = require("nodemailer");
+const fs = require("fs");
 
+const xlsx = require("xlsx");
+const csv = require("csv-parser");
 // pagination
 exports.getOffset = (pageno, itemperpage) => {
   // Convert to integer or fallback to default
@@ -50,6 +53,24 @@ exports.formattedQueryLog = (query, values) => {
     // Replace $1, $2, etc. (PostgreSQL style) or ? (MySQL style)
     formattedQuery = formattedQuery.replace(/\$\d+|\?/, `'${value}'`);
   });
-  console.log('\x1b[34mExecuted Query:= %s\x1b[0m', formattedQuery);
+  console.log("\x1b[34mExecuted Query:= %s\x1b[0m", formattedQuery);
   return formattedQuery;
-}
+};
+
+exports.parseExcel = (filePath) => {
+  const workbook = xlsx.readFile(filePath);
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  return xlsx.utils.sheet_to_json(worksheet);
+};
+
+exports.parseCSV = (filePath) => {
+  return new Promise((resolve, reject) => {
+    const results = [];
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on("data", (data) => results.push(data))
+      .on("end", () => resolve(results))
+      .on("error", (err) => reject(err));
+  });
+};
