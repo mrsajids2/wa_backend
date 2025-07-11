@@ -1,32 +1,30 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-require('dotenv').config();
+var express = require("express");
+var path = require("path");
+var cookieParser = require("cookie-parser");
+var logger = require("morgan");
+require("dotenv").config();
 
-const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
-const bookRouter = require('./routes/books');
-const reviewRouter = require('./routes/reviews');
-const companyRouter = require("./routes/company")
-var cors = require('cors');
-// const { dbConnection } = require('./config/dbconfig');
+const indexRouter = require("./routes/index");
+const authRouter = require("./routes/auth.route");
+const contactRouter = require("./routes/contact.route");
+const cors = require("cors");
 const { errorHandler } = require("./utils/ErrorHandler");
 
-var app = express();
-// dbConnection();
+const app = express();
+// / Initialize Redis connection
+require("./config/redisClient");
+
 app.use(cors());
-app.use(logger('dev'));
+app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use('/', indexRouter);
-app.use('/api', companyRouter);
-// app.use('/users', usersRouter);
-// app.use('/api', bookRouter);
-// app.use('/api', reviewRouter);
+// Routes
+app.use("/", indexRouter);
+app.use("/api", authRouter);
+app.use("/api", contactRouter);
 
 app.use(errorHandler);
 

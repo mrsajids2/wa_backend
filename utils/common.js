@@ -1,6 +1,7 @@
-const nodemailer = require('nodemailer');
+const { default: axios } = require("axios");
+const nodemailer = require("nodemailer");
 
-// pagination 
+// pagination
 exports.getOffset = (pageno, itemperpage) => {
   // Convert to integer or fallback to default
   let perPage = parseInt(itemperpage);
@@ -12,7 +13,7 @@ exports.getOffset = (pageno, itemperpage) => {
   return [offset, perPage];
 };
 
-exports.sendOtp = () => {
+exports.generateOTP = () => {
   // Placeholder for OTP sending logic
   // This function can be implemented to send OTP via email or SMS
   // For example, using a third-party service like Twilio or SendGrid
@@ -21,34 +22,34 @@ exports.sendOtp = () => {
     const otp = Math.floor(100000 + Math.random() * 900000); // Generate a random 6-digit OTP
     resolve(otp);
   });
-}
-
-// Reusable mail function
-exports.sendMail = async ({ to, subject, text, html }) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail', // Change if using another SMTP
-      auth: {
-        user: process.env.MAIL_USER, // Your email
-        pass: process.env.MAIL_PASS, // App Password
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.MAIL_USER,
-      to,
-      subject,
-      text,
-      html,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.response);
-    return { success: true, info };
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return { success: false, error };
-  }
 };
 
+exports.checkEmailOrMobile = (input = "") => {
+  input = input.trim();
 
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const mobileRegex = /^(\+?\d[\d\s-]{9,})$/;
+
+  if (emailRegex.test(input)) return "EMAIL";
+
+  const digitsOnly = input.replace(/\D/g, "");
+  if (
+    mobileRegex.test(input) &&
+    digitsOnly.length >= 10 &&
+    digitsOnly.length <= 15
+  ) {
+    return "MOBILE";
+  }
+
+  return "UNKNOWN";
+};
+
+exports.formattedQueryLog = (query, values) => {
+  let formattedQuery = query;
+  values.forEach((value, index) => {
+    // Replace $1, $2, etc. (PostgreSQL style) or ? (MySQL style)
+    formattedQuery = formattedQuery.replace(/\$\d+|\?/, `'${value}'`);
+  });
+  console.log('\x1b[34mExecuted Query:= %s\x1b[0m', formattedQuery);
+  return formattedQuery;
+}

@@ -1,0 +1,17 @@
+# folder structure
+next-com-api/
+|
+├── config/
+│   └── db.js
+├── repositories/
+│   └── name.repository.js 
+├── services/
+│   └── name.service.js
+├── controllers/
+│   └── name.controller.js
+├── routes/
+│   └── name.routes.js
+├── app.js
+└── server.js
+
+
