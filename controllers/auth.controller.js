@@ -444,10 +444,10 @@ exports.testing = async (req, res, next) => {
       return response.forbidden(res, "Email is required");
     }
     // check redis data
-    // const session = await checkAllRedisData();
+    const session = await checkAllRedisData();
     // const session = await sendSMSOTP("917588157242", "123456");
     // clear all reddis data
-    const session = await deleteAllRedisData();
+    // const session = await deleteAllRedisData();
     return response.serverError(res, 500, "", session);
   } catch (error) {
     next(error);
