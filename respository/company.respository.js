@@ -45,8 +45,9 @@ class Company {
 
   static async findByMobile(mobile) {
     try {
-      const query = "SELECT * FROM masters.company WHERE contactno = $1";
-      const result = await db.query(query, [mobile]);
+      const query = "SELECT * FROM masters.company";
+      const result = await db.query(query, []);
+      console.log(result);
       return result.rows[0];
     } catch (error) {
       console.error(error);
