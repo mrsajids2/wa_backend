@@ -1,18 +1,31 @@
 const pool = require("../config/conn");
 const { formattedQueryLog } = require("../utils/common");
 
-exports.insertContact = async (contact) => {
-  const { name, email, phone } = contact;
+exports.insertSingleContact = async (schemaName,companyId, user) => {
+  const query = `
+    INSERT INTO ${schemaName}.users (
+      companyid, username, mobileno, countrycode, emailid, usercategory, stateid, cityid, address, status, entrytime
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+    RETURNING *
+  `;
 
-  // Optional: skip incomplete rows
-  if (!name || !email) return;
+  const values = [
+    companyId,
+    user.username,
+    user.mobileno,
+    user.countrycode,
+    user.email,
+    user.usercategory,
+    user.stateid,
+    user.cityid,
+    user.address,
+    0,
+  ];
 
-  await pool.query(
-    `INSERT INTO contacts (name, email, phone)
-     VALUES ($1, $2, $3)`,
-    [name, email, phone || null]
-  );
+  return (await pool.query(query, values)).rows[0];
 };
+
 
 exports.insertManyContacts = async (schemaName, companyId, users) => {
   const client = await pool.connect();
@@ -186,4 +199,17 @@ exports.getAllContacts = async (
     totalPages: Math.ceil(total / pageSize),
     contacts: result.rows, // includes rowno
   };
+};
+
+
+exports.checkUserExists = async (schemaName, mobileno, countrycode) => {
+  const query = `
+    SELECT * FROM ${schemaName}.users
+    WHERE
+      (mobileno = $1 AND countrycode = $2)
+    LIMIT 1
+  `;
+  const values = [mobileno, countrycode];
+  const result = await pool.query(query, values);
+  return result.rows[0];
 };

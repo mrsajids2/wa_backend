@@ -1,4 +1,4 @@
-const { getAllContacts } = require("../respository/contact.repository");
+const { getAllContacts, insertSingleContact, checkUserExists } = require("../respository/contact.repository");
 const fs = require("fs");
 const path = require("path");
 const { insertManyContacts } = require("../respository/contact.repository");
@@ -55,7 +55,6 @@ exports.uploadContacts = async (req, res) => {
   }
 };
 
-// GET /contact/details - Get contact details with search and pagination
 exports.getContactDetails = async (req, res) => {
   const {
     companyid,
@@ -93,3 +92,52 @@ exports.getContactDetails = async (req, res) => {
     return response.serverError(res, "Internal server error");
   }
 };
+
+exports.insertSingleContact = async (req, res) => {
+  try {
+    const {
+      companyid,
+      username,
+      mobileno,
+      countrycode,
+      email,
+      usercategory,
+      stateid,
+      cityid,
+      address
+    } = req.body;
+
+    // Validate required fields
+    if (!mobileno) {
+      return response.forbidden(res, "Either mobile number is required.");
+    }
+
+    if (!companyid || !username || !usercategory || !stateid || !cityid ) {
+      return response.forbidden(res, "All Fields required.");
+    }
+
+    
+    let  existingUser = await checkUserExists("company", mobileno,countrycode);
+    if (existingUser) {
+      return response.alreadyExist(res, "User already registered.");
+    }
+
+    const user = await insertSingleContact("company", companyid, {
+      companyid,
+      username,
+      mobileno,
+      countrycode,
+      email,
+      usercategory,
+      stateid,
+      cityid,
+      address
+    });
+    return response.success(res, 200, "Saved successfully.", {
+    });
+  } catch (err) {
+    console.error('Error creating user:', err);
+    return response.serverError(res, "Internal server error");
+  }
+};
+

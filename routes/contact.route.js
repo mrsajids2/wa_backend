@@ -28,6 +28,12 @@ router.post(
   contactController.uploadContacts
 );
 
+router.post(
+  "/contact/add",
+  authMiddleware,
+  contactController.insertSingleContact
+);
+
 // Get contact details (by companyid or all)
 router.post(
   "/contact/details",
