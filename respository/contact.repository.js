@@ -213,3 +213,10 @@ exports.checkUserExists = async (schemaName, mobileno, countrycode) => {
   const result = await pool.query(query, values);
   return result.rows[0];
 };
+
+exports.deleteUserById = async (schemaName, id) => {
+  const query = `DELETE FROM ${schemaName}.users WHERE userid = $1 RETURNING *`;
+  const result = await pool.query(query, [id]);
+  return result.rows[0]; // returns deleted record or undefined
+};
+

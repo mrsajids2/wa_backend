@@ -41,4 +41,10 @@ router.post(
   contactController.getContactDetails
 );
 
+router.post(
+  "/contact/delete",
+  authMiddleware,
+  contactController.deleteContact
+);
+
 module.exports = router;

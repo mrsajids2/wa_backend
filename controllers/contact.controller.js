@@ -1,4 +1,4 @@
-const { getAllContacts, insertSingleContact, checkUserExists } = require("../respository/contact.repository");
+const { getAllContacts, insertSingleContact, checkUserExists, deleteUserById } = require("../respository/contact.repository");
 const fs = require("fs");
 const path = require("path");
 const { insertManyContacts } = require("../respository/contact.repository");
@@ -119,7 +119,7 @@ exports.insertSingleContact = async (req, res) => {
     
     let  existingUser = await checkUserExists("company", mobileno,countrycode);
     if (existingUser) {
-      return response.alreadyExist(res, "User already registered.");
+      return response.alreadyExist(res, "User already exist.");
     }
 
     const user = await insertSingleContact("company", companyid, {
@@ -140,4 +140,26 @@ exports.insertSingleContact = async (req, res) => {
     return response.serverError(res, "Internal server error");
   }
 };
+
+exports.deleteContact = async (req, res) => {
+  try {
+    const {
+      userid
+    } = req.body;
+
+    if (!userid) {
+      return response.forbidden(res, "Userid is required.");
+    }
+      const user = await deleteUserById("company", userid);
+      if (user) {
+        return response.success(res, 200, "Deleted successfully.");
+      } else {
+          return response.notFound(res, "User not found.");   
+      }  
+  } catch (err) {
+    console.error('Error creating user:', err);
+    return response.serverError(res, "Internal server error");
+  }
+};
+
 
