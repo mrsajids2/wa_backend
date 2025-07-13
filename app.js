@@ -5,8 +5,8 @@ var logger = require("morgan");
 require("dotenv").config();
 
 const indexRouter = require("./routes/index");
-const authRouter = require("./routes/auth.route");
-const contactRouter = require("./routes/contact.route");
+const companyRouter = require("./routes/company.route");
+const userRouter = require("./routes/user.route");
 const listRouter = require("./routes/list.route");
 const cors = require("cors");
 const { errorHandler } = require("./utils/ErrorHandler");
@@ -24,8 +24,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Routes
 app.use("/", indexRouter);
-app.use("/api", authRouter);
-app.use("/api", contactRouter);
+app.use("/api", companyRouter);
+app.use("/api", userRouter);
 app.use("/api", listRouter);
 
 app.use(errorHandler);

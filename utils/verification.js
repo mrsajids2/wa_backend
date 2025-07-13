@@ -282,14 +282,14 @@ exports.signupSendOTP = async (
     }
 
     // Step 2: Try SMS
-    // const smsResponse = await this.sendSMSOTP(mobilewithcountrycode, otpcode);
-    // if (smsResponse.success) {
-    //   return {
-    //     success: true,
-    //       otpsentvia: "SMS",
-    //       message: smsResponse.message,
-    //     };
-    //   }
+    const smsResponse = await this.sendSMSOTP(mobilewithcountrycode, otpcode);
+    if (smsResponse.success) {
+      return {
+        success: true,
+          otpsentvia: "SMS",
+          message: smsResponse.message,
+        };
+      }
   }
 
   // If it's an email, skip WhatsApp and SMS steps

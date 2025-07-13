@@ -1,9 +1,8 @@
-const { getAllContacts, insertSingleContact, checkUserExists, deleteUserById } = require("../respository/contact.repository");
 const fs = require("fs");
 const path = require("path");
-const { insertManyContacts } = require("../respository/contact.repository");
 const { parseCSV, parseExcel } = require("../utils/common");
 const response = require("../utils/responseManager");
+const User = require("../respository/user.repository");
 
 exports.uploadContacts = async (req, res) => {
   // Step 1: req body validation
@@ -35,9 +34,9 @@ exports.uploadContacts = async (req, res) => {
     }
 
     fs.unlinkSync(filePath); // remove file after parsing
-    console.log("Parsed contacts:", contacts);
+    // console.log("Parsed contacts:", contacts);
 
-    const { successCount, failedCount } = await insertManyContacts(
+    const { successCount, failedCount } = await User.insertManyContacts(
       "company",
       companyid,
       contacts
@@ -71,7 +70,7 @@ exports.getContactDetails = async (req, res) => {
     if (mobileno) {
       filterConditions.mobileno = mobileno;
     }
-    const result = await getAllContacts("company", {
+    const result = await User.getAllContacts("company", {
       filterConditions,
       search,
       page: parseInt(page),
@@ -117,12 +116,12 @@ exports.insertSingleContact = async (req, res) => {
     }
 
     
-    let  existingUser = await checkUserExists("company", mobileno,countrycode);
+    let  existingUser = await User.checkUserExists("company", mobileno,countrycode);
     if (existingUser) {
       return response.alreadyExist(res, "User already exist.");
     }
 
-    const user = await insertSingleContact("company", companyid, {
+    const user = await User.insertSingleContact("company", companyid, {
       companyid,
       username,
       mobileno,
@@ -150,7 +149,7 @@ exports.deleteContact = async (req, res) => {
     if (!userid) {
       return response.forbidden(res, "Userid is required.");
     }
-      const user = await deleteUserById("company", userid);
+      const user = await User.deleteUserById("company", userid);
       if (user) {
         return response.success(res, 200, "Deleted successfully.");
       } else {
@@ -162,4 +161,46 @@ exports.deleteContact = async (req, res) => {
   }
 };
 
+exports.updateContact = async (req, res) => {
+  try {
+    const {
+      userid,
+      companyid,
+      username,
+      mobileno,
+      countrycode,
+      email,
+      usercategory,
+      stateid,
+      cityid,
+      address
+    } = req.body;
+
+    // Validate required fields
+    if (!userid) {
+      return response.forbidden(res, "Userid is required.");
+    }
+    
+
+    const user = await User.updateUserById(
+      "company",
+      userid,
+      companyid,
+      {
+        username,
+        mobileno,
+        countrycode,
+        emailid:email,
+        usercategory,
+        stateid,
+        cityid,
+        address
+      }
+    );
+    return response.success(res, 200, "Updated successfully.", {});
+  } catch (err) {
+    console.error('Error creating user:', err);
+    return response.serverError(res, "Internal server error");
+  }
+};
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const company = require("../controllers/auth.controller");
+const company = require("../controllers/company.controller");
 const authMiddleware = require("../middleware/auth.middleware");
 
 router.post("/company/sendsignupotp", company.signUpCompany);

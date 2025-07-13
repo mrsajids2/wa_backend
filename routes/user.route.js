@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-const contactController = require("../controllers/contact.controller");
+const contact = require("../controllers/user.controller");
 const authMiddleware = require("../middleware/auth.middleware");
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -25,26 +25,32 @@ router.post(
   "/contact/upload-contacts",
   authMiddleware,
   upload.single("file"),
-  contactController.uploadContacts
+  contact.uploadContacts
 );
 
 router.post(
   "/contact/add",
   authMiddleware,
-  contactController.insertSingleContact
+  contact.insertSingleContact
 );
 
 // Get contact details (by companyid or all)
 router.post(
   "/contact/details",
   authMiddleware,
-  contactController.getContactDetails
+  contact.getContactDetails
 );
 
 router.post(
   "/contact/delete",
   authMiddleware,
-  contactController.deleteContact
+  contact.deleteContact
+);
+
+router.post(
+  "/contact/update",
+  authMiddleware,
+  contact.updateContact
 );
 
 module.exports = router;
