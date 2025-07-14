@@ -53,4 +53,11 @@ router.post(
   contact.updateContact
 );
 
+// Delete multiple contacts
+router.post(
+  "/contact/delete-multiple",
+  authMiddleware,
+  contact.deleteMultipleContacts
+);
+
 module.exports = router;

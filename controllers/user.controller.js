@@ -61,14 +61,29 @@ exports.getContactDetails = async (req, res) => {
     search = "",
     page = 1,
     pageSize = 10,
+    stateid,
+    cityid,
+    usercategory
   } = req.body;
-  try {    
+  try {
+    if (!companyid) {
+      return response.forbidden(res, "Companyid is required");
+    }
     const filterConditions = {};
     if (companyid) {
       filterConditions.companyid = companyid;
     }
     if (mobileno) {
       filterConditions.mobileno = mobileno;
+    }
+    if (stateid) {
+      filterConditions.stateid = stateid;
+    } 
+    if (cityid) {
+      filterConditions.cityid = cityid;
+    }
+    if (usercategory) {
+      filterConditions.usercategory = usercategory;
     }
     const result = await User.getAllContacts("company", {
       filterConditions,
@@ -103,7 +118,7 @@ exports.insertSingleContact = async (req, res) => {
       usercategory,
       stateid,
       cityid,
-      address
+      address,
     } = req.body;
 
     // Validate required fields
@@ -111,12 +126,15 @@ exports.insertSingleContact = async (req, res) => {
       return response.forbidden(res, "Either mobile number is required.");
     }
 
-    if (!companyid || !username || !usercategory || !stateid || !cityid ) {
+    if (!companyid || !username || !usercategory || !stateid || !cityid) {
       return response.forbidden(res, "All Fields required.");
     }
 
-    
-    let  existingUser = await User.checkUserExists("company", mobileno,countrycode);
+    let existingUser = await User.checkUserExists(
+      "company",
+      mobileno,
+      countrycode
+    );
     if (existingUser) {
       return response.alreadyExist(res, "User already exist.");
     }
@@ -130,33 +148,30 @@ exports.insertSingleContact = async (req, res) => {
       usercategory,
       stateid,
       cityid,
-      address
+      address,
     });
-    return response.success(res, 200, "Saved successfully.", {
-    });
+    return response.success(res, 200, "Saved successfully.", {});
   } catch (err) {
-    console.error('Error creating user:', err);
+    console.error("Error creating user:", err);
     return response.serverError(res, "Internal server error");
   }
 };
 
 exports.deleteContact = async (req, res) => {
   try {
-    const {
-      userid
-    } = req.body;
+    const { userid } = req.body;
 
     if (!userid) {
       return response.forbidden(res, "Userid is required.");
     }
-      const user = await User.deleteUserById("company", userid);
-      if (user) {
-        return response.success(res, 200, "Deleted successfully.");
-      } else {
-          return response.notFound(res, "User not found.");   
-      }  
+    const user = await User.deleteUserById("company", userid);
+    if (user) {
+      return response.success(res, 200, "Deleted successfully.");
+    } else {
+      return response.notFound(res, "User not found.");
+    }
   } catch (err) {
-    console.error('Error creating user:', err);
+    console.error("Error creating user:", err);
     return response.serverError(res, "Internal server error");
   }
 };
@@ -173,34 +188,55 @@ exports.updateContact = async (req, res) => {
       usercategory,
       stateid,
       cityid,
-      address
+      address,
     } = req.body;
 
     // Validate required fields
     if (!userid) {
       return response.forbidden(res, "Userid is required.");
     }
-    
 
-    const user = await User.updateUserById(
-      "company",
-      userid,
-      companyid,
-      {
-        username,
-        mobileno,
-        countrycode,
-        emailid:email,
-        usercategory,
-        stateid,
-        cityid,
-        address
-      }
-    );
+    const user = await User.updateUserById("company", userid, companyid, {
+      username,
+      mobileno,
+      countrycode,
+      emailid: email,
+      usercategory,
+      stateid,
+      cityid,
+      address,
+    });
     return response.success(res, 200, "Updated successfully.", {});
   } catch (err) {
-    console.error('Error creating user:', err);
+    console.error("Error creating user:", err);
     return response.serverError(res, "Internal server error");
   }
 };
 
+// Delete multiple contacts
+exports.deleteMultipleContacts = async (req, res) => {
+  try {
+    const { userids, companyid } = req.body;
+    if (!Array.isArray(userids) || userids.length === 0) {
+      return response.forbidden(res, "userids array is required.");
+    }
+    if (!companyid) {
+      return response.forbidden(res, "companyid is required.");
+    }
+    // Optionally, you can check if all userids belong to the company before deleting
+    const result = await User.deleteUsersByIds("company", userids);
+    if (result?.deletedCount) {
+      return response.success(
+        res,
+        200,
+        "Contacts deleted successfully.",
+        result
+      );
+    } else {
+      return response.serverError(res, 200, "Failded to delete user.", result);
+    }
+  } catch (err) {
+    console.error("Error deleting users:", err);
+    return response.serverError(res, "Internal server error");
+  }
+};

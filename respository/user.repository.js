@@ -3,6 +3,20 @@ const pool = require("../config/conn");
 const { formattedQueryLog } = require("../utils/common");
 
 class UserRepository {
+  static async deleteUsersByIds(schemaName, userids = []) {
+    if (!Array.isArray(userids) || userids.length === 0) return { deleted: 0, notDeleted: 0, deletedIds: [], notDeletedIds: [] };
+    // Use parameterized query for array
+    const query = `DELETE FROM ${schemaName}.users WHERE userid = ANY($1::uuid[]) RETURNING userid`;
+    const result = await pool.query(query, [userids]);
+    const deletedIds = result.rows.map(r => r.userid);
+    const notDeletedIds = userids.filter(id => !deletedIds.includes(id));
+    return {
+      deletedCount: deletedIds.length,
+      deleteFailedCount: notDeletedIds.length,
+      deletedIds,
+      notDeletedIds
+    };
+  }
   static async insertSingleContact(schemaName, companyId, user) {
     const query = `
       INSERT INTO ${schemaName}.users (
@@ -136,20 +150,25 @@ class UserRepository {
 
     // Build filters from filterConditions
     for (const [key, value] of Object.entries(filterConditions)) {
-      filters.push(`${key} = $${values.length + 1}`);
+      // Prefix ambiguous columns with um.
+      let col = key;
+      if (["stateid", "cityid", "username", "emailid", "mobileno", "address", "usercategory", "companyid", "userid"].includes(key)) {
+        col = `um.${key}`;
+      }
+      filters.push(`${col} = $${values.length + 1}`);
       values.push(value);
     }
 
     // Add search filter
     if (search) {
       const searchableColumns = [
-        "username",
-        "emailid",
-        "CAST(mobileno AS TEXT)",
-        "address",
-        "usercategory",
-        "CAST(stateid AS TEXT)",
-        "CAST(cityid AS TEXT)",
+        "um.username",
+        "um.emailid",
+        "CAST(um.mobileno AS TEXT)",
+        "um.address",
+        "um.usercategory",
+        "CAST(um.stateid AS TEXT)",
+        "CAST(um.cityid AS TEXT)",
       ];
       const searchConditions = searchableColumns.map(
         (col, idx) => `${col} ILIKE $${values.length + idx + 1}`
@@ -165,8 +184,10 @@ class UserRepository {
     // Main query with row number
     const query = `
       SELECT * FROM (
-        SELECT *, ROW_NUMBER() OVER (ORDER BY entrytime DESC) AS rowno
-        FROM ${schemaName}.users
+        SELECT um.*, sm.statename, cm.cityname, ROW_NUMBER() OVER (ORDER BY um.entrytime DESC) AS rowno
+        FROM ${schemaName}.users um
+        LEFT JOIN masters.state AS sm ON sm.stateid = um.stateid
+        LEFT JOIN masters.city AS cm ON cm.cityid = um.cityid
         ${whereClause}
       ) AS sub
       ORDER BY entrytime DESC
@@ -175,9 +196,9 @@ class UserRepository {
     // console.log(whereClause);
 
     // Count query
-    const countQuery = `SELECT COUNT(*) FROM ${schemaName}.users ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) FROM ${schemaName}.users um ${whereClause}`;
     const countValues = values.slice(0, -2);
-
+formattedQueryLog(query,values)
     // Execute queries
     const [countResult, result] = await Promise.all([
       pool.query(countQuery, countValues),
