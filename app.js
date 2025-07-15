@@ -14,6 +14,10 @@ const { errorHandler } = require("./utils/ErrorHandler");
 // Initialize Redis
 require("./config/redisClient");
 
+// Initialize Kafka client and producer
+const produceMessage = require('./lib/kafka/producer');
+const startConsumer = require('./lib/kafka/consumer');
+
 // Routers
 const indexRouter = require("./routes/index");
 const companyRouter = require("./routes/company.route");
@@ -31,6 +35,21 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+// API to send Kafka message
+app.post('/publish', async (req, res) => {
+  const { topic, message } = req.body;
+
+  try {
+    await produceMessage(topic, message);
+    res.status(200).json({ success: true, message: 'Message sent to Kafka' });
+  } catch (err) {
+    console.error('Error sending message:', err);
+    res.status(500).json({ success: false, error: 'Kafka error' });
+  }
+});
+
+// Start Kafka consumer (optional)
+startConsumer().catch(console.error); // This will now work
 // Routes
 app.use("/", indexRouter);
 app.use("/api", companyRouter);
