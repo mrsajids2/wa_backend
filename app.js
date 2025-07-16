@@ -15,14 +15,17 @@ const { errorHandler } = require("./utils/ErrorHandler");
 require("./config/redisClient");
 
 // Initialize Kafka client and producer
-const produceMessage = require('./lib/kafka/producer');
-const startConsumer = require('./lib/kafka/consumer');
+// const produceMessage = require('./lib/kafka/producer');
+// const startConsumer = require('./lib/kafka/consumer');
+const { sendMessage } = require('./lib/kafka/producer');
 
 // Routers
 const indexRouter = require("./routes/index");
 const companyRouter = require("./routes/company.route");
 const userRouter = require("./routes/user.route");
 const listRouter = require("./routes/list.route");
+const templateRouter = require("./routes/template.route");
+const callbackRouter = require("./routes/callback.route");
 
 // Create Express app
 const app = express();
@@ -36,25 +39,43 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 // API to send Kafka message
-app.post('/publish', async (req, res) => {
-  const { topic, message } = req.body;
+// app.post('/publish', async (req, res) => {
+//   const { topic, message } = req.body;
 
-  try {
-    await produceMessage(topic, message);
-    res.status(200).json({ success: true, message: 'Message sent to Kafka' });
-  } catch (err) {
-    console.error('Error sending message:', err);
-    res.status(500).json({ success: false, error: 'Kafka error' });
+//   try {
+//     await produceMessage(topic, message);
+//     res.status(200).json({ success: true, message: 'Message sent to Kafka' });
+//   } catch (err) {
+//     console.error('Error sending message:', err);
+//     res.status(500).json({ success: false, error: 'Kafka error' });
+//   }
+// });
+
+// Test API to produce template-approved event to Kafka
+app.post('/api/fake-template-approve', async (req, res) => {
+  const { templateid, companyid, templatename } = req.body;
+  console.log(req.body);
+  
+  if (!templateid || !companyid || !templatename) {
+    return res.status(400).json({ error: 'templateid, companyid, templatename required' });
   }
+  await sendMessage('template-approved', {
+    templateid,
+    companyid,
+    templatename
+  });
+  res.json({ message: 'template-approved event produced', data: { templateid, companyid, templatename } });
 });
 
 // Start Kafka consumer (optional)
-startConsumer().catch(console.error); // This will now work
+// startConsumer().catch(console.error); // This will now work
 // Routes
-app.use("/", indexRouter);
+// app.use("/", indexRouter);
 app.use("/api", companyRouter);
 app.use("/api", userRouter);
 app.use("/api", listRouter);
+app.use("/api", templateRouter);
+app.use("/", callbackRouter);
 
 // Global error handler
 app.use(errorHandler);

@@ -11,7 +11,7 @@ const {
   getOtpSessionForMobile,
   createLoginSession,
   deleteLoginSession,
-} = require("../lib/session");
+} = require("../lib/redis/session");
 
 exports.signUpCompany = async (req, res, next) => {
   // Step 1: Request body validation

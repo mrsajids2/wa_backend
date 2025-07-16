@@ -3,7 +3,7 @@ const {
   getLoginSession,
   updateLoginSessionExpiry,
   deleteLoginSession,
-} = require("../lib/session");
+} = require("../lib/redis/session");
 const { verifyToken } = require("../utils/userHelper");
 // middleware/auth.middleware.js
 const authMiddleware = async (req, res, next) => {
