@@ -1,5 +1,4 @@
 const pool = require("../config/conn");
-const { formattedQueryLog } = require("../utils/common");
 
 class TemplateRepository {
   static async createTemplate({
@@ -7,15 +6,17 @@ class TemplateRepository {
     templatelanguage,
     templatecontent,
     companyid,
+    templatecategory,
     status,
   }) {
-    const query = `INSERT INTO company.templates (templatename, templatelanguage, templatecontent, companyid, status, created_at)
-      VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *`;
+    const query = `INSERT INTO company.templates (templatename, templatelanguage, templatecontent, companyid, templatecategory, status, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`;
     const values = [
       templatename,
       templatelanguage,
       templatecontent,
       companyid,
+      templatecategory,
       status,
     ];
     const result = await pool.query(query, values);
@@ -41,7 +42,7 @@ class TemplateRepository {
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
     const offset = (page - 1) * pageSize;
     values.push(pageSize, offset);
-    const query = `SELECT templateid, templatename, templatelanguage, templatecontent, (case when status = 0 then 'Pending'
+    const query = `SELECT templateid, templatename, templatelanguage,templatecategory, templatecontent, (case when status = 0 then 'Pending'
           when status = 1 then 'Approved'
           when status = 2 then 'Rejected' end) as status FROM ${schemaName}.templates ${whereClause} ORDER BY created_at DESC LIMIT $${
       values.length - 1
@@ -57,6 +58,12 @@ class TemplateRepository {
       page,
       templates: result.rows,
     };
+  }
+
+  static async deleteTemplate(schemaName, templateid) {
+    const query = `DELETE FROM ${schemaName}.templates WHERE templateid = $1 RETURNING *`;
+    const result = await pool.query(query, [templateid]);
+    return result.rows[0];
   }
 }
 

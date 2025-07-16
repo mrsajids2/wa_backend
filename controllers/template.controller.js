@@ -2,14 +2,34 @@ const TemplateRepository = require("../respository/template.repository");
 const response = require("../utils/responseManager");
 const kafka = require("../lib/kafka/producer");
 const { checkKafkaHealth } = require("../lib/kafka/healthCheck");
+const { TEMPLATE_CATEGORIES } = require("../utils/constant");
 
 exports.createTemplate = async (req, res) => {
   try {
-    const { templatename, templatelanguage, templatecontent, companyid } =
-      req.body;
-    if (!templatename || !templatelanguage || !templatecontent || !companyid) {
+    const {
+      templatename,
+      templatelanguage,
+      templatecontent,
+      companyid,
+      templatecategory,
+    } = req.body;
+    if (
+      !templatename ||
+      !templatelanguage ||
+      !templatecontent ||
+      !companyid ||
+      !templatecategory
+    ) {
       return response.badRequest(res, "All fields are required");
     }
+
+    if (!TEMPLATE_CATEGORIES.includes(templatecategory.toLowerCase())) {
+      return response.badRequest(
+        res,
+        `templatecategory must be one of: ${TEMPLATE_CATEGORIES.join(", ")}`
+      );
+    }
+
     // Check for duplicate template name for the same company
     const existing = await TemplateRepository.getTemplates("company", {
       filters: { templatename, companyid },
@@ -34,7 +54,8 @@ exports.createTemplate = async (req, res) => {
       templatelanguage,
       templatecontent,
       companyid,
-      status: "0",
+      templatecategory:templatecategory.toLowerCase(),
+      status: "0", //  by default setting pending stsu
     });
     // Send to Kafka for approval
     await kafka.sendMessage("whatsapp-template-approval", {
@@ -43,6 +64,7 @@ exports.createTemplate = async (req, res) => {
       templatelanguage,
       templatecontent,
       companyid,
+      templatecategory:templatecategory.toLowerCase(),
     });
     return response.success(
       res,
@@ -82,6 +104,19 @@ exports.getTemplates = async (req, res) => {
     return response.success(res, 200, "Success", result);
   } catch (err) {
     console.error("Error getting templates:", err);
+    return response.serverError(res, "Internal server error");
+  }
+};
+
+exports.deleteTemplate = async (req, res) => {
+  try {
+    const { templateid } = req.body;
+    if (!templateid) return response.badRequest(res, "templateid required");
+    const deleted = await TemplateRepository.deleteTemplate("company", templateid);
+    if (!deleted) return response.notFound(res, "Template not found");
+    return response.success(res, 200, "Template deleted successfully.", { deleted });
+  } catch (err) {
+    console.error("Error deleting template:", err);
     return response.serverError(res, "Internal server error");
   }
 };

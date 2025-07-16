@@ -12,4 +12,7 @@ router.post('/template/update', authMiddleware, templateController.approveTempla
 // Get template details with filters and pagination
 router.post('/template/details', authMiddleware, templateController.getTemplates);
 
+// Delete template by id
+router.post('/template/delete', authMiddleware, templateController.deleteTemplate);
+
 module.exports = router;
